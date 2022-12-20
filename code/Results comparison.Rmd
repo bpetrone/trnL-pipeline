@@ -1,0 +1,925 @@
+---
+title: "Results comparison"
+output: html_notebook
+---
+
+## Setup
+
+```{r setup, include=FALSE}
+require(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = file.path(getwd(), '..')) # Project dir
+# Note that below isn't currently working when running chunks interactively,
+# but should when the document is knit
+# https://github.com/rstudio/rstudio/issues/8149
+# knitr::opts_chunk$set(engine.opts = list(bash = "-l"))
+```
+
+```{r}
+# Load required R libraries
+library(Biostrings)
+library(here)
+library(phyloseq)
+library(qiime2R)
+library(tidyverse)
+```
+
+## Read in data
+
+```{r}
+# Point to directory containing FASTQs at each stage
+
+dcc.dir <- 
+     here('data',
+          'Adult-2',
+          'prior')
+
+qiime.dir <- 
+     here('data',
+          'Adult-2',
+          'current')
+```
+
+```{r}
+# Well to sample name mapping for prior data
+# Batch 1, prior data
+batch1.map <- 
+     here('..',
+          'onr',
+          'data',
+          'processed',
+          'miniseq',
+          '20201128',
+          '20201128_sample_sheet.csv') %>% 
+     read_csv(skip = 16) %>% 
+     select(well = Sample_ID, sample = Name)
+
+head(batch1.map)
+```
+
+### Read counts
+
+```{r}
+# Read in count files from DCC pipeline: Batch 1
+count.fs <- list.files(dcc.dir, 
+                       pattern = glob2rx('20201128*.txt'),
+                       full.names = TRUE)
+
+# Read them
+count.fs <- lapply(count.fs, MButils::parse_counts)
+
+# Bind into shared dataframe
+counts.batch1 <- 
+     reduce(count.fs, left_join, by = 'sample')
+
+names(counts.batch1) <- c('sample', 
+                         'raw', 
+                         'adapter_trim',
+                         'primer_filter',
+                         'primer_trim')
+
+rm(count.fs)
+```
+
+```{r}
+# Batch 2
+count.fs <- list.files(dcc.dir, 
+                       pattern = glob2rx('20210105*.txt'),
+                       full.names = TRUE)
+
+# Read them
+count.fs <- lapply(count.fs, MButils::parse_counts)
+
+# Bind into shared dataframe
+counts.batch2 <- 
+     reduce(count.fs, left_join, by = 'sample')
+
+names(counts.batch2) <- c('sample', 
+                          'raw', 
+                          'adapter_trim',
+                          'primer_filter',
+                          'primer_trim')
+
+rm(count.fs)
+```
+
+```{r}
+# Bind together
+counts.batch1$batch <- '20201128'
+counts.batch2$batch <- '20210105'
+
+counts.prior <- 
+     bind_rows(counts.batch1,
+               counts.batch2)
+```
+
+
+```{bash engine.opts='-l'}
+# Extract count information from QIIME2 visualization object
+# Unzip the files if not already done
+cd "$QIIME_DIR"
+
+for f in *.qzv; do
+     unzip $f -d ${f%.qzv}
+done
+```
+
+```{r}
+# Read TSVs
+count.fs <- 
+     list.files(qiime.dir,
+                pattern = 'per-sample-fastq-counts.tsv',
+                recursive = TRUE,
+                full.names = TRUE)
+
+count.fs <- 
+     lapply(count.fs, read_delim) %>% 
+     lapply(select, -`reverse sequence count`)
+
+counts.qiime <- reduce(count.fs, left_join, by = 'sample ID')
+names(counts.qiime) <- c('sample', 
+                         'raw',
+                         'adapter_trim',
+                         'primer_trim')
+
+rm(count.fs)
+```
+
+### Files
+
+#### Adapter trimmed
+
+```{r}
+# Read in one file and do a side-by-side comparison: 
+# What's the extent of differences?
+dcc.atrim.fs <- 
+     file.path(dcc.dir,
+               '1_trimadapter') %>% 
+     list.files(pattern = '*fastq.gz',
+                full.names = TRUE)
+```
+
+```{bash engine.opts='-l'}
+# First need to unzip all these
+cd "$QIIME_DIR"
+unzip 1_demultiplexed.qza -d 1_demultiplexed_fastq
+unzip 2_adapter-trimmed.qza -d 2_adapter-trimmed_fastq
+unzip 3_primer-trimmed.qza -d 3_primer-trimmed_fastq
+```
+
+```{r}
+qiime.atrim.fs <- 
+     here(qiime.dir,
+          '2_adapter-trimmed_fastq',
+          '4ed2f742-3915-4cd4-ae4e-1b74a5a6364d',
+          'data') %>% 
+     list.files(pattern = '*fastq.gz',
+                full.names = TRUE)
+```
+
+#### Primer trimmed
+
+```{r}
+# Read in one file and do a side-by-side comparison: 
+# What's the extent of differences?
+dcc.ptrim.fs <- 
+     file.path(dcc.dir,
+               '3_trimprimer') %>% 
+     list.files(pattern = '*fastq.gz',
+                full.names = TRUE)
+```
+
+```{r}
+qiime.ptrim.fs <- 
+     here(qiime.dir,
+          '3_primer-trimmed-direct_fastq',
+          '8aa62d5a-773d-4407-ba64-4b288306f9f8',
+          'data') %>% 
+     list.files(pattern = '*fastq.gz',
+                full.names = TRUE)
+```
+
+
+#### Sequence tables
+
+Use QIIME2R functions to extract information from QIIME2 artifacts. 
+
+```{r}
+qiime.asvtab.1 <- 
+     here(qiime.dir,
+          'batch1',
+          '4_denoised-table.qza') %>% 
+     read_qza()
+
+qiime.asvtab.2 <- 
+     here(qiime.dir,
+          'batch2',
+          '4_denoised-table.qza') %>% 
+     read_qza()
+```
+
+```{r}
+qiime.seqs.1 <- 
+     here(qiime.dir,
+          'batch1',
+          '4_denoised-seqs.qza') %>% 
+     read_qza()
+
+qiime.seqs.2 <- 
+     here(qiime.dir,
+          'batch2',
+          '4_denoised-seqs.qza') %>% 
+     read_qza()
+```
+
+```{r}
+dcc.asvtab.1 <- 
+     here(dcc.dir,
+          '20201128_seqtab_nochim.rds') %>% 
+     readRDS()
+
+dcc.asvtab.2 <- 
+     here(dcc.dir,
+          '20210105_seqtab_nochim.rds') %>% 
+     readRDS()
+```
+
+### Scripts
+
+```{r}
+# Helper script for calculating MD5 checksum on each gzipped FASTQ in directory
+md5 <- 
+     here('code', 
+          'hash-fastqs')
+
+Sys.setenv(MD5HELPER = md5)
+```
+
+## Pre-process
+
+### Make phyloseq object
+
+### Combine read counts
+```{r}
+# Provenance of read counts
+counts.qiime$pipeline <- 'QIIME2'
+counts.prior$pipeline <- 'DCC'
+```
+
+```{r}
+# Combine
+reads <- 
+     bind_rows(counts.prior,
+               counts.qiime)
+
+reads
+```
+
+### MD5 hash
+
+#### DCC
+Calculate MD5 checksum for DCC output files
+```{bash engine.opts='-l'}
+cd "$DCC_DIR"/0_raw_demux
+"$MD5HELPER" >> ../0_hash_unzip.txt
+
+cd "$DCC_DIR"/1_trimadapter
+"$MD5HELPER" >> ../1_hash_unzip.txt
+
+cd "$DCC_DIR"/3_trimprimer
+"$MD5HELPER" >> ../3_hash_unzip.txt
+```
+
+```{r}
+# Summarize into dataframe
+# Read in 
+dcc.hash <-
+     dcc.dir %>% 
+     list.files(pattern = '_hash.txt',
+                full.names = TRUE) %>% 
+     lapply(read.delim, 
+            sep = ' ',
+            header = FALSE)
+
+# Label by pipeline step
+names(dcc.hash) <- c('raw',
+                     'adapter_trim',
+                     'primer_trim')
+
+# Bind together
+dcc.hash <- bind_rows(dcc.hash, .id = 'step')
+```
+
+```{r}
+dcc.hash <- 
+     dcc.hash %>% 
+     select(step, file = V2, MD5 = V4) %>% 
+     mutate(file = gsub(file, 
+                        pattern = '^\\(',
+                        replacement = ''),
+            file = gsub(file,
+                        pattern = '_S\\d{2}_L001',
+                        replacement = ''),
+            file = gsub(file,
+                        pattern = '_001',
+                        replacement = ''),
+            file = gsub(file,
+                        pattern = '.fastq.gz)$',
+                        replacement = '')) 
+```
+
+```{r}
+dcc.hash.unzip <- 
+     dcc.dir %>% 
+     list.files(pattern = '_hash_unzip.txt',
+                full.names = TRUE) %>% 
+     lapply(read.table) 
+
+names(dcc.hash.unzip) <- 
+     c('raw',
+       'adapter_trim',
+       'primer_trim')
+
+dcc.hash.unzip <- 
+     bind_rows(dcc.hash.unzip, .id = 'step')
+```
+
+```{r}
+# Clean up
+n <- nrow(dcc.hash.unzip)
+dcc.hash.unzip <- 
+     data.frame(step = dcc.hash.unzip$step[seq(1, n, by = 2)],
+                file = dcc.hash.unzip$V1[seq(1, n, by = 2)],
+                MD5 = dcc.hash.unzip$V1[seq(2, n, by = 2)]) %>% 
+     mutate(file = gsub(file,
+                        pattern = '_S\\d{2}_L001',
+                        replacement = ''),
+            file = gsub(file,
+                        pattern = '_001',
+                        replacement = ''),
+            file = gsub(file,
+                        pattern = '.fastq.gz$',
+                        replacement = ''))
+```
+
+#### QIIME
+Calculate MD5 checksum for QIIME output files
+
+```{bash engine.opts='-l'}
+# Now calculate MD5 for fastqs in each of these subdirectories
+# Already done on zipped files; copy
+cd "$QIIME_DIR"
+cp 1_demultiplexed_fastq/*/checksums.md5 1_hash.txt
+cp 2_adapter-trimmed_fastq/*/checksums.md5 2_hash.txt
+cp 3_primer-trimmed_fastq/*/checksums.md5 3_hash.txt
+```
+
+```{bash engine.opts='-l'}
+# Unzip
+cd "$QIIME_DIR"
+
+unzip 1_demultiplexed.qza -d 1_demultiplexed_fastqs
+unzip 2_adapter-trimmed.qza -d 2_adapter-trimmed_fastqs
+unzip 3_primer-trimmed.qza -d 3_primer-trimmed_fastqs
+
+# Hash raw FASTQs (MD5 helper script decompresses them with zcat)
+cd "$QIIME_DIR"/1_demultiplexed_fastqs/*/data
+"$MD5HELPER" >> ../../../1_hash_unzip.txt
+
+cd "$QIIME_DIR"/2_adapter-trimmed_fastqs/*/data
+"$MD5HELPER" >> ../../../2_hash_unzip.txt
+
+cd "$QIIME_DIR"/3_primer-trimmed_fastqs/*/data
+"$MD5HELPER" >> ../../../3_hash_unzip.txt
+```
+
+```{bash engine.opts='-l'}
+# Clean up
+cd "$QIIME_DIR"
+rm -r *_fastqs/
+```
+
+```{r}
+# Read in 
+qiime.hash <-
+     qiime.dir %>% 
+     list.files(pattern = '_hash.txt',
+                full.names = TRUE) %>% 
+     lapply(read.delim, 
+            sep = ' ',
+            header = FALSE)
+
+# Label by pipeline step
+names(qiime.hash) <- c('raw',
+                       'adapter_trim',
+                       'primer_trim')
+
+# Bind together
+qiime.hash <- bind_rows(qiime.hash, .id = 'step')
+```
+
+```{r}
+# Clean up
+qiime.hash <-
+     qiime.hash %>% 
+     select(step, file = V3, MD5 = V1) %>% 
+     filter(grepl(file, pattern = 'fastq.gz')) %>% 
+     mutate(file = gsub(pattern = '^data/', 
+                        replacement = '',
+                        file),
+            file = gsub(file,
+                        pattern = '_S\\d{2}_L001',
+                        replacement = ''),
+            file = gsub(file,
+                        pattern = '_001',
+                        replacement = ''),
+            file = gsub(file,
+                        pattern = '.fastq.gz$',
+                        replacement = ''))
+
+qiime.hash %>% 
+     group_by(step) %>% 
+     count()
+```
+```{r}
+qiime.hash.unzip <- 
+     qiime.dir %>% 
+     list.files(pattern = '_hash_unzip.txt',
+                full.names = TRUE) %>% 
+     lapply(read.table) 
+
+names(qiime.hash.unzip) <- 
+     c('raw',
+       'adapter_trim',
+       'primer_trim')
+
+qiime.hash.unzip <- 
+     bind_rows(qiime.hash.unzip, .id = 'step')
+```
+
+```{r}
+# Clean up
+n <- nrow(qiime.hash.unzip)
+qiime.hash.unzip <- 
+     data.frame(step = qiime.hash.unzip$step[seq(1, n, by = 2)],
+                file = qiime.hash.unzip$V1[seq(1, n, by = 2)],
+                MD5 = qiime.hash.unzip$V1[seq(2, n, by = 2)]) %>% 
+     mutate(file = gsub(file,
+                        pattern = '_S\\d{2}_L001',
+                        replacement = ''),
+            file = gsub(file,
+                        pattern = '_001',
+                        replacement = ''),
+            file = gsub(file,
+                        pattern = '.fastq.gz$',
+                        replacement = ''))
+```
+
+#### Combine
+```{r}
+# Zipped
+dcc.hash$pipeline = 'DCC'
+qiime.hash$pipeline = 'QIIME2'
+
+hash <-
+     bind_rows(dcc.hash,
+               qiime.hash) %>% 
+     pivot_wider(names_from = pipeline,
+                 values_from = MD5) %>% 
+     # Update labels for plotting
+     mutate(step = factor(step,
+                          levels = c('raw',
+                                     'adapter_trim',
+                                     'primer_trim'),
+                          labels = c('Demultiplexed',
+                                     'Adapter trimmed',
+                                     'Primers trimmed')))
+
+rm(dcc.hash, qiime.hash)
+```
+
+```{r}
+# Unzipped
+dcc.hash.unzip$pipeline = 'DCC'
+qiime.hash.unzip$pipeline = 'QIIME2'
+
+hash.unzip <-
+     bind_rows(dcc.hash.unzip,
+               qiime.hash.unzip) %>% 
+     pivot_wider(names_from = pipeline,
+                 values_from = MD5) %>% 
+     # Update labels for plotting
+     mutate(step = factor(step,
+                          levels = c('raw',
+                                     'adapter_trim',
+                                     'primer_trim'),
+                          labels = c('Demultiplexed',
+                                     'Adapter trimmed',
+                                     'Primers trimmed')))
+
+rm(dcc.hash.unzip, qiime.hash.unzip)
+```
+
+### Pipeline outputs
+
+#### Adapter trimmmed
+
+```{r}
+# Start with one file
+# Are all in same order?
+all(basename(qiime.atrim.fs) == basename(dcc.atrim.fs))
+
+dcc.atrim.1 <- 
+     dcc.atrim.fs[[1]] %>% 
+     readDNAStringSet(format = 'fastq') %>% 
+     data.frame(seq = .) %>% 
+     rownames_to_column(var = 'read') %>% 
+     mutate(pipeline = 'DCC')
+
+qiime.atrim.1 <- 
+     qiime.atrim.fs[[1]] %>% 
+     readDNAStringSet(format = 'fastq') %>% 
+     data.frame(seq = .) %>% 
+     rownames_to_column(var = 'read') %>% 
+     mutate(pipeline = 'QIIME')
+
+atrim <- bind_rows(dcc.atrim.1,
+                   qiime.atrim.1)
+
+rm(dcc.atrim.1, qiime.atrim.1)
+```
+
+#### Primer trimmed
+
+```{r}
+# Start with one file
+# Are all in same order?
+all(gsub(gsub(basename(qiime.ptrim.fs),
+              pattern = '_S\\d{2}_L001',
+              replacement = ''),
+         pattern = '_001',
+         replacement = '') == basename(dcc.ptrim.fs))
+
+dcc.ptrim.1 <- 
+     dcc.ptrim.fs[[1]] %>% 
+     readDNAStringSet(format = 'fastq') %>% 
+     data.frame(seq = .) %>% 
+     rownames_to_column(var = 'read') %>% 
+     mutate(pipeline = 'DCC')
+
+qiime.ptrim.1 <- 
+     qiime.ptrim.fs[[1]] %>% 
+     readDNAStringSet(format = 'fastq') %>% 
+     data.frame(seq = .) %>% 
+     rownames_to_column(var = 'read') %>% 
+     mutate(pipeline = 'QIIME')
+
+ptrim <- bind_rows(dcc.ptrim.1,
+                   qiime.ptrim.1)
+
+rm(dcc.ptrim.1, qiime.ptrim.1)
+```
+
+#### ASV tables
+
+##### Prior
+
+```{r}
+# Rename Batch 1 samples for consistency
+```
+
+###### Current 
+```{r}
+# Map QIIME2 onto DCC format (samples x ASVs)
+head(qiime.asvtab)
+```
+```{r}
+qiime.asvtab <-
+     qiime.asvtab %>% 
+     left_join(qiime.asvs, 
+               by = c('#OTU ID' = 'hash')) %>% 
+     select(-`#OTU ID`) %>% 
+     column_to_rownames(var = 'seq') %>% 
+     t() %>% 
+     data.frame()
+
+qiime.asvtab
+```
+
+
+## Compare
+
+### Read counts
+
+```{r}
+reads.wide <-
+     reads %>% 
+     pivot_longer(-c(sample, pipeline),
+                  names_to = 'step',
+                  values_to = 'value') %>% 
+     filter(step != 'primer_filter') %>% 
+     pivot_wider(names_from = pipeline,
+                 values_from = value)
+
+reads.wide
+```
+
+```{r}
+# Update labels for plotting
+reads.wide$step <- 
+     factor(reads.wide$step,
+            levels = c('raw',
+                       'adapter_trim',
+                       'primer_trim'),
+            labels = c('Demultiplexed',
+                       'Adapter trimmed',
+                       'Primers trimmed'))
+```
+
+```{r}
+ggplot(reads.wide, aes(x = DCC, y = QIIME2)) +
+     geom_point(alpha = 0.5) +
+     facet_wrap(~step) +
+     coord_equal()
+```
+
+```{r}
+reads.wide %>% 
+     mutate(equal = DCC == QIIME2) %>% 
+     group_by(step, equal) %>% 
+     count()
+```
+
+```{r}
+# What's the mean absolute magnitude of difference in read counts?
+reads.wide %>% 
+     mutate(diff = abs(DCC - QIIME2)) %>% 
+     filter(diff != 0) %>% 
+     group_by(step) %>% 
+     summarize(mean(diff))
+```
+```{r}
+# What's the mean of total reads, for comparison?
+reads.wide %>% 
+     mutate(diff = abs(DCC - QIIME2)) %>% 
+     filter(diff != 0) %>% 
+     group_by(step) %>% 
+     summarize(mean(QIIME2),
+               mean(DCC))
+```
+
+
+### File contents
+
+Actually, with hashing, probably want to be more nuanced.  Are there *any* files where the hash is the same, or are they all different???
+
+```{r}
+hash %>% 
+     group_by(step) %>% 
+     summarize(pass = all(QIIME2 == DCC))
+```
+
+```{r}
+hash.unzip %>% 
+     group_by(step) %>% 
+     summarize(pass = all(QIIME2 == DCC))
+```
+
+Okay, now that I know there are differences, follow up on individual files. What might cause adapters to be trimmed differently? The DCC pipeline used BBDuk; but the QIIME2 pipeline used cutadapt.  Perhaps this introduces differences, and could be skipped entirely?
+
+#### Adapter trimmed
+
+```{r}
+# What about just # of reads passing through?
+atrim %>% 
+     group_by(pipeline) %>% 
+     count()
+```
+So it's the reads themselves that differ. Set myself up to find these:
+
+```{r}
+# How many reads aren't equivalent
+atrim.wide <- 
+     atrim %>% 
+     pivot_wider(names_from = 'pipeline',
+                 values_from = 'seq') 
+
+dim(atrim.wide)
+
+atrim.diff <- 
+     filter(atrim.wide,
+       DCC != QIIME)
+
+dim(atrim.diff)
+```
+
+Okay, so ~5% of reads end up different. What's different about them?
+
+```{r}
+atrim.diff %>% 
+     summarize(across(.cols = c(QIIME, DCC),
+                      .fns = ~mean(nchar(.x))))
+```
+```{r}
+# Are they always longer?
+atrim.wide %>% 
+     mutate(qiime_length = case_when(nchar(QIIME) < nchar(DCC) ~ 'smaller',
+                                     nchar(QIIME) > nchar(DCC) ~ 'larger',
+                                     TRUE ~ 'equal')) %>% 
+     group_by(qiime_length) %>% 
+     count()
+```
+
+#### Primer trimmed
+
+We already know that the # of reads is slightly different-- by an average of ~2 reads per sample when a difference happens.  
+
+Check also for differences in the *content* of reads
+
+```{r}
+# How many reads aren't equivalent
+ptrim.wide <- 
+     ptrim %>% 
+     pivot_wider(names_from = 'pipeline',
+                 values_from = 'seq') 
+
+dim(ptrim.wide)
+
+ptrim.diff <- 
+     filter(ptrim.wide,
+       DCC != QIIME)
+
+dim(ptrim.diff)
+```
+
+Okay, so ~1% of reads end up different. What's different about them?
+
+```{r}
+ptrim.diff %>% 
+     summarize(across(.cols = c(QIIME, DCC),
+                      .fns = ~mean(nchar(.x))))
+```
+```{r}
+# Are they always longer?
+ptrim.wide %>% 
+     mutate(qiime_length = case_when(nchar(QIIME) < nchar(DCC) ~ 'smaller',
+                                     nchar(QIIME) > nchar(DCC) ~ 'larger',
+                                     TRUE ~ 'equal')) %>% 
+     group_by(qiime_length) %>% 
+     count()
+```
+```{r}
+# Look at a few of these.  What happens?
+ptrim %>% 
+     group_by(read) %>% 
+     filter(n_distinct(seq) == 2) %>% 
+     arrange(read) %>% 
+     write_csv(here('results', 
+                    'trimmed-differences.csv'))
+```
+
+Hmmm.  What's the consensus on the bit of sequence immediately downstream of the cut point
+```{r}
+# Try extracting this
+untrimmed <- 
+     mapply(gsub,
+            pattern = ptrim.diff$DCC,
+            x = ptrim.diff$QIIME,
+            replacement = '') %>% 
+     DNAStringSet()
+```
+
+```{r}
+# Make alignment
+untrimmed.aln <- 
+     DECIPHER::AlignSeqs(untrimmed)
+
+untrimmed.aln
+```
+
+```{r}
+# Get consensus sequence
+DECIPHER::BrowseSeqs(untrimmed.aln)
+```
+
+```{r}
+narrow(untrimmed.aln, start = 23, end = 43) %>% 
+     as.character() %>% 
+     ggseqlogo::ggseqlogo()
+```
+
+Hmmmm-- now I'm curious to know what tends to come just upstream of that sequence
+
+```{r}
+# Try extracting this
+upstream <- 
+     ptrim.diff %>% 
+     pull(QIIME) %>% 
+     lapply(stringr::str_sub,
+            start = -20,
+            end = -1) %>% 
+     unlist() %>% 
+     DNAStringSet() 
+```
+
+```{r}
+# Make alignment
+upstream.aln <- 
+     DECIPHER::AlignSeqs(upstream)
+```
+
+```{r}
+# Get consensus sequence
+DECIPHER::BrowseSeqs(upstream.aln)
+```
+
+```{r}
+narrow(upstream.aln,
+       start = 3, end = 22) %>% 
+     as.character() %>% 
+     ggseqlogo::ggseqlogo()
+```
+
+### Sequence tables
+
+From QZV, total count in QIIME2 ASV table is 2,963,756
+```{r}
+2963756/sum(dcc.asvtab)
+```
+
+#### Reads per sample
+
+```{r}
+qiime.asvtab.counts <-
+     data.frame(QIIME = rowSums(qiime.asvtab)) %>% 
+     rownames_to_column(var = 'sample')
+
+dcc.asvtab.counts <-
+     data.frame(DCC = rowSums(dcc.asvtab)) %>% 
+     rownames_to_column(var = 'sample')
+
+sample.counts <- 
+     full_join(qiime.asvtab.counts,
+               dcc.asvtab.counts)
+
+rm(qiime.asvtab.counts,
+   dcc.asvtab.counts)
+```
+
+```{r}
+ggplot(sample.counts,
+       aes(x = DCC, y = QIIME)) +
+     geom_abline(slope = 1, intercept = 0,
+                 linetype = 'dashed',
+                 color = 'red') +
+     geom_point(alpha = 0.5) +
+     coord_equal()
+```
+
+
+#### ASVs
+
+```{r}
+cat('Intersection: ', length(intersect(dcc.asvs, 
+                                       qiime.asvs)))
+```
+
+```{r}
+cat('From prior, not current', setdiff(dcc.asvs,
+                                       qiime.asvs))
+```
+
+```{r}
+ref <- 
+     here('..',
+          'food-dbs',
+          'data',
+          'outputs',
+          'dada2-compatible',
+          'trnL',
+          'trnLGH.fasta')
+
+MButils::assignSpecies_mod(setdiff(dcc.asvs,
+                                   qiime.asvs),
+                           refFasta = ref)
+```
+1. Ocimum basilicum (96% match)
+2. Illumina adapter
+3. Brassica oleracea
+
+```{r}
+cat('From current, not prior', setdiff(qiime.asvs,
+                                       dcc.asvs))
+```
+
+```{r}
+MButils::assignSpecies_mod(setdiff(qiime.asvs,
+                                   dcc.asvs),
+                           refFasta = ref)
+```
+
+1. Rubus amabilis
+2. Attalea allenii (palm w/ edible seed, liquid from endosperm); 95% homology to coconut
+3. Vitis vinifera (98% identity)
+4. Bacteroides uniformis
+5. Illumina adapter
