@@ -147,59 +147,6 @@ rm(count.fs)
 
 ### Files
 
-#### Adapter trimmed
-
-```{r}
-# Read in one file and do a side-by-side comparison: 
-# What's the extent of differences?
-dcc.atrim.fs <- 
-     file.path(dcc.dir,
-               '1_trimadapter') %>% 
-     list.files(pattern = '*fastq.gz',
-                full.names = TRUE)
-```
-
-```{bash engine.opts='-l'}
-# First need to unzip all these
-cd "$QIIME_DIR"
-unzip 1_demultiplexed.qza -d 1_demultiplexed_fastq
-unzip 2_adapter-trimmed.qza -d 2_adapter-trimmed_fastq
-unzip 3_primer-trimmed.qza -d 3_primer-trimmed_fastq
-```
-
-```{r}
-qiime.atrim.fs <- 
-     here(qiime.dir,
-          '2_adapter-trimmed_fastq',
-          '4ed2f742-3915-4cd4-ae4e-1b74a5a6364d',
-          'data') %>% 
-     list.files(pattern = '*fastq.gz',
-                full.names = TRUE)
-```
-
-#### Primer trimmed
-
-```{r}
-# Read in one file and do a side-by-side comparison: 
-# What's the extent of differences?
-dcc.ptrim.fs <- 
-     file.path(dcc.dir,
-               '3_trimprimer') %>% 
-     list.files(pattern = '*fastq.gz',
-                full.names = TRUE)
-```
-
-```{r}
-qiime.ptrim.fs <- 
-     here(qiime.dir,
-          '3_primer-trimmed-direct_fastq',
-          '8aa62d5a-773d-4407-ba64-4b288306f9f8',
-          'data') %>% 
-     list.files(pattern = '*fastq.gz',
-                full.names = TRUE)
-```
-
-
 #### Sequence tables
 
 Use QIIME2R functions to extract information from QIIME2 artifacts. 
@@ -242,17 +189,6 @@ dcc.asvtab.2 <-
      here(dcc.dir,
           '20210105_seqtab_nochim.rds') %>% 
      readRDS()
-```
-
-### Scripts
-
-```{r}
-# Helper script for calculating MD5 checksum on each gzipped FASTQ in directory
-md5 <- 
-     here('code', 
-          'hash-fastqs')
-
-Sys.setenv(MD5HELPER = md5)
 ```
 
 ## Pre-process
