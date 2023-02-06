@@ -6,4 +6,4 @@ The taxonomic rank to which a *trnL* amplicon sequence variant (ASV) can be assi
 
 |  	  | Family | Genus | Species |
 | --- | --- | --- | --- |
-| % assigned	| 99.3 | 92.6 | 99.3 |
+| ASV assignment	| 99.3% | 92.6% | 83.2% |
