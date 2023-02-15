@@ -25,7 +25,7 @@ QZV files are [visualizations](https://docs.qiime2.org/2022.8/concepts/#data-fil
 ### Requirements
 
 -   Demultiplexed, paired-end Illumina sequencing data produced with
-    [bcl2fastq](https://support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html).
+    [bcl2fastq](https://support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html). *Have raw Illumina data that's not yet demultiplexed?* See [here](TBD) for an example script to create a folder of demultiplexed files.
 -   [QIIME2](https://qiime2.org) (current distribution 2022.8). For
     installation instructions, see the [QIIME2
     documentation](https://docs.qiime2.org/2022.8/install/)
