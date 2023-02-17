@@ -84,15 +84,6 @@ qiime dada2 denoise-paired \
      
 ## Make feature table ##########################################################
 
-# This one goes to BIOM format samples X hash-- directly to TSV
-qiime tools export --input-path 4_denoised-table.qza \
-     --output-path 4_exported-feature-table
-     
-biom convert -i 4_exported-feature-table/feature-table.biom \
-     -o 4_feature-table.tsv --to-tsv
-     
-# This seems to be a more direct way to produce the same data as in BIOM
-# gives samples x hash
 qiime metadata tabulate \
      --m-input-file 4_denoised-table.qza \
      --o-visualization 4_denoised-table.qzv
