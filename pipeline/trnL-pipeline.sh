@@ -39,6 +39,7 @@ qiime demux summarize \
 qiime cutadapt trim-paired \
      --i-demultiplexed-sequences 1_demultiplexed.qza \
      --p-adapter-f CTGTCTCTTATACACATCT \
+     --p-adapter-r CTGTCTCTTATACACATCT \
      --verbose \
      --o-trimmed-sequences 2_adapter-trimmed.qza \
      &> 2_adapter-trimmed.txt
