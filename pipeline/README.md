@@ -67,6 +67,7 @@ We'll work through the pipeline on the example dataset.  Clone this repository, 
 We'll begin by making a directory for the output. The following commands save the current directory as a variable, make an output directory by appending `_output` to the end of its name, and then go to the new output directory (from which all the following commands will be run).
 ```
 INPUT=$(pwd) 
+cd ..
 mkdir ${INPUT##*/}_output 
 cd ${INPUT##*/}_output 
 ```
@@ -76,11 +77,72 @@ conda activate qiime2-2022.8
 ```
 #### Import data
 
+First, we'll import the demultiplexed sequencing files as a QIIME2 artifact.
+```
+qiime tools import \
+     --type 'SampleData[PairedEndSequencesWithQuality]' \
+     --input-path $INPUT \
+     --input-format CasavaOneEightSingleLanePerSampleDirFmt \
+     --output-path 1_demultiplexed.qza
+     
+qiime demux summarize \
+  --i-data 1_demultiplexed.qza \
+  --o-visualization 1_demultiplexed.qzv
+```
+
 #### Trim adapter
+```
+qiime cutadapt trim-paired \
+     --i-demultiplexed-sequences 1_demultiplexed.qza \
+     --p-adapter-f CTGTCTCTTATACACATCT \
+     --p-adapter-r CTGTCTCTTATACACATCT \
+     --verbose \
+     --o-trimmed-sequences 2_adapter-trimmed.qza \
+     &> 2_adapter-trimmed.txt
+
+qiime demux summarize \
+  --i-data 2_adapter-trimmed.qza \
+  --o-visualization 2_adapter-trimmed.qzv
+```
 
 #### Trim primers
 
+```
+qiime cutadapt trim-paired \
+     --i-demultiplexed-sequences 2_adapter-trimmed.qza \
+     --p-adapter-f ^GGGCAATCCTGAGCCAA...GATAGGTGCAGAGACTCAATGG \
+     --p-adapter-r ^CCATTGAGTCTCTGCACCTATC...TTGGCTCAGGATTGCCC \
+     --p-error-rate 0.15 \
+     --p-minimum-length 1 \
+     --p-overlap 5 \
+     --p-discard-untrimmed \
+     --verbose \
+     --o-trimmed-sequences 3_primer-trimmed.qza \
+     &> 3_primer-trimmed.txt
+     
+qiime demux summarize \
+  --i-data 3_primer-trimmed.qza \
+  --o-visualization 3_primer-trimmed.qzv
+```
+
 #### Denoise sequences with DADA2
+
+```
+qiime dada2 denoise-paired \
+     --i-demultiplexed-seqs 3_primer-trimmed.qza \
+     --p-trunc-len-f 0 \
+     --p-trunc-len-r 0 \
+     --p-max-ee-f 2 \
+     --p-max-ee-r 2 \
+     --p-trunc-q 2 \
+     --p-min-overlap 12 \
+     --p-pooling-method 'independent' \
+     --verbose \
+     --o-table 4_denoised-table.qza \
+     --o-representative-sequences 4_denoised-seqs.qza \
+     --o-denoising-stats 4_denoised-stats.qza \
+     &> 4_denoised.txt
+ ```
 
 #### Make feature table
 
