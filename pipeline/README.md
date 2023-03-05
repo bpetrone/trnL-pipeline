@@ -1,6 +1,6 @@
 ## Computational pipeline
 
-This directory contains a description, code, and example dataset that describe the procedure for analyzing *trnL*-P6 amplicon sequencing libraries generated using the primers *trnL*(UAA)*g* and *trnL*(UAA)*h) from [Taberlet *et al.*, 2006](https://dx.doi.org/10.1093/nar/gkl938). These scripts produce, from demultiplexed paired-end sequencing data, a table of *trnL* sequence variants, their counts in each sample, and their taxonomic assignment.  Additional details are described below. 
+This directory contains a description, code, and example dataset that describe the procedure for analyzing *trnL*-P6 amplicon sequencing libraries generated using the primers *trnL*(UAA)*g* and *trnL*(UAA)*h*) from [Taberlet *et al.*, 2006](https://dx.doi.org/10.1093/nar/gkl938). These scripts produce, from demultiplexed paired-end sequencing data, a table of *trnL* sequence variants, their counts in each sample, and their taxonomic assignment.  Additional details are described below. 
 
 ### Requirements
 
@@ -52,4 +52,36 @@ An example dataset of 20 samples is provided in [example-data/]() that can be wo
 
 ### Tutorial
 
+#### Setup
 
+We'll work through the pipeline on the example dataset.  Clone this repository, then `cd` into the directory containing the example data.  You should be able to see the demultiplexed files with `ls`:
+```
+1-A03_S17_L001_R1_001.fastq.gz
+1-A03_S17_L001_R2_001.fastq.gz
+1-B08_S53_L001_R1_001.fastq.gz
+1-B08_S53_L001_R2_001.fastq.gz
+1-C03_S19_L001_R1_001.fastq.gz
+1-C03_S19_L001_R2_001.fastq.gz
+...
+```
+We'll begin by making a directory for the output. 
+```
+INPUT=$(pwd) # Save the current directory as a variable
+mkdir ${INPUT##*/}_output # Make an output directory with the suffix "_output"
+cd ${INPUT##*/}_output # Go to that directory
+```
+Now, we'll begin working through the pipeline in QIIME2.  You'll need to activate your QIIME2 environment, which may differ in name from the example here.  You can check the name of the environment by running `conda env list`. Activate the environment by running: 
+```
+conda activate qiime2-2022.8
+```
+#### Import data
+
+#### Trim adapter
+
+#### Trim primers
+
+#### Denoise sequences with DADA2
+
+#### Make feature table
+
+##### Assign taxonomy
