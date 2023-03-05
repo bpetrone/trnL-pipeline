@@ -22,10 +22,12 @@ These scripts produce, from paired-end demultiplexed Illumina sequencing data, a
 QZA files are [QIIME2 artifacts](https://docs.qiime2.org/2022.8/concepts/#data-files-qiime-2-artifacts), or compressed files containing both the data generated at the corresponding stage of the pipeline and metadata about its type, format, and the commands that generated it.
 QZV files are [visualizations](https://docs.qiime2.org/2022.8/concepts/#data-files-visualizations) of the information contained in artifacts.  They're readily examined using the [QIIME2 View](https://view.qiime2.org) tool.
 
+An example dataset of 20 samples is provided in [example-data/]() that can be worked through the pipeline using an [R notebook tutorial]().
+
 ### Requirements
 
 -   Demultiplexed, paired-end Illumina sequencing data produced with
-    [bcl2fastq](https://support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html). *Have raw Illumina data that's not yet demultiplexed?* See [here](TBD) for an example script to create a folder of demultiplexed files.
+    [bcl2fastq](https://support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html). *Have raw Illumina data that's not yet demultiplexed?* See [demultiplexing](TBD) for an example script to create a folder of demultiplexed files.
 -   [QIIME2](https://qiime2.org) (current distribution 2022.8). For
     installation instructions, see the [QIIME2
     documentation](https://docs.qiime2.org/2022.8/install/)
