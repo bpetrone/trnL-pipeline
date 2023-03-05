@@ -1,6 +1,32 @@
 ## Computational pipeline
 
-These scripts produce, from paired-end demultiplexed Illumina sequencing data, a results directory containing the following files, grouped by their pipeline stage:
+This directory contains a description, code, and example dataset that describe the procedure for analyzing *trnL*-P6 amplicon sequencing libraries generated using the primers *trnL*(UAA)*g* and *trnL*(UAA)*h) from [Taberlet *et al.*, 2006](https://dx.doi.org/10.1093/nar/gkl938). These scripts produce, from demultiplexed paired-end sequencing data, a table of *trnL* sequence variants, their counts in each sample, and their taxonomic assignment.  Additional details are described below. 
+
+### Requirements
+
+-   [QIIME2](https://qiime2.org) (current distribution 2022.8). For
+    installation instructions, see the [QIIME2
+    documentation](https://docs.qiime2.org/2022.8/install/)
+-   [DADA2](https://benjjneb.github.io/dada2/index.html).
+
+### Inputs
+
+-   Demultiplexed, paired-end Illumina sequencing data produced with
+    [bcl2fastq](https://support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html). *Have raw Illumina data that's not yet demultiplexed?* See [demultiplexing](TBD) for an example script to create a folder of demultiplexed files.
+
+### Analysis strategy
+
+The overall steps of the pipeline are
+
+1.  Read in data as a QIIME2 artifact
+2.  Trim off non-biological nucleotides (*i.e.*, primers and adapters) from the reads
+3.  Denoise the reads to produce *trnL* amplicon sequence variants (ASVs)
+4.  Make a feature table
+5.  Assign taxonomy
+
+### Outputs
+
+Given a `FOLDER` containing the demultiplexed FASTQ input files, these scripts will produce a new directory named `FOLDER_output` containing the following files, which are preceded by a number indicating their stage in the pipeline:
 
 - 1: Raw data
      - 1_demultiplexed.qza
@@ -22,25 +48,8 @@ These scripts produce, from paired-end demultiplexed Illumina sequencing data, a
 QZA files are [QIIME2 artifacts](https://docs.qiime2.org/2022.8/concepts/#data-files-qiime-2-artifacts), or compressed files containing both the data generated at the corresponding stage of the pipeline and metadata about its type, format, and the commands that generated it.
 QZV files are [visualizations](https://docs.qiime2.org/2022.8/concepts/#data-files-visualizations) of the information contained in artifacts.  They're readily examined using the [QIIME2 View](https://view.qiime2.org) tool.
 
-An example dataset of 20 samples is provided in [example-data/]() that can be worked through the pipeline using an [R notebook tutorial]().
-
-### Requirements
-
--   Demultiplexed, paired-end Illumina sequencing data produced with
-    [bcl2fastq](https://support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html). *Have raw Illumina data that's not yet demultiplexed?* See [demultiplexing](TBD) for an example script to create a folder of demultiplexed files.
--   [QIIME2](https://qiime2.org) (current distribution 2022.8). For
-    installation instructions, see the [QIIME2
-    documentation](https://docs.qiime2.org/2022.8/install/)
--   [DADA2](https://benjjneb.github.io/dada2/index.html).
+An example dataset of 20 samples is provided in [example-data/]() that can be worked through the pipeline either on the command line as shown below, or interactively using the [R notebook tutorial](ADD LINK XX).
 
 ### Tutorial
 
-The overall steps of the pipeline are
 
-1.  Read in data as a QIIME2 artifact
-2.  Trim off non-biological nucleotides (*i.e.*, primers and adapters)
-    from the reads
-3.  Denoise the reads to produce *trnL* amplicon sequence variants
-    (ASVs)
-4.  Make a feature table
-5.  Assign taxonomy
