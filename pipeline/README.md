@@ -64,11 +64,11 @@ We'll work through the pipeline on the example dataset.  Clone this repository, 
 1-C03_S19_L001_R2_001.fastq.gz
 ...
 ```
-We'll begin by making a directory for the output. 
+We'll begin by making a directory for the output. The following commands save the current directory as a variable, make an output directory by appending `_output` to the end of its name, and then go to the new output directory (from which all the following commands will be run).
 ```
-INPUT=$(pwd) # Save the current directory as a variable
-mkdir ${INPUT##*/}_output # Make an output directory with the suffix "_output"
-cd ${INPUT##*/}_output # Go to that directory
+INPUT=$(pwd) 
+mkdir ${INPUT##*/}_output 
+cd ${INPUT##*/}_output 
 ```
 Now, we'll begin working through the pipeline in QIIME2.  You'll need to activate your QIIME2 environment, which may differ in name from the example here.  You can check the name of the environment by running `conda env list`. Activate the environment by running: 
 ```
