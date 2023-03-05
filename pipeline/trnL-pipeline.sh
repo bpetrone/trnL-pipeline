@@ -13,11 +13,10 @@
 
 ## Set up input, output directories ############################################
 
-INPUT_DIR=$1
-cd $INPUT_DIR/..
+INPUT=$1
+cd $INPUT/..
 mkdir ${1##*/}_output
 cd ${1##*/}_output
-OUTPUT_DIR=$(pwd)
 
 source /hpc/home/blp23/miniconda3/etc/profile.d/conda.sh
 conda activate qiime2-2022.8
@@ -26,7 +25,7 @@ conda activate qiime2-2022.8
 
 qiime tools import \
      --type 'SampleData[PairedEndSequencesWithQuality]' \
-     --input-path $INPUT_DIR \
+     --input-path $INPUT \
      --input-format CasavaOneEightSingleLanePerSampleDirFmt \
      --output-path 1_demultiplexed.qza
      
