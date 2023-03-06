@@ -48,7 +48,7 @@ Given a `FOLDER` containing the demultiplexed FASTQ input files, these scripts w
 QZA files are [QIIME2 artifacts](https://docs.qiime2.org/2022.8/concepts/#data-files-qiime-2-artifacts), or compressed files containing both the data generated at the corresponding stage of the pipeline and metadata about its type, format, and the commands that generated it.
 QZV files are [visualizations](https://docs.qiime2.org/2022.8/concepts/#data-files-visualizations) of the information contained in artifacts.  They're readily examined using the [QIIME2 View](https://view.qiime2.org) tool.
 
-An example dataset of 20 samples is provided in [example-data/]() that can be worked through the pipeline either on the command line as shown below, or interactively using the [R notebook tutorial](ADD LINK XX).
+An example dataset of 20 samples is provided in [example-data/](https://github.com/bpetrone/trnL-pipeline/tree/master/pipeline/example-data) that can be worked through the pipeline either on the command line as shown below, or interactively using the [R notebook tutorial](ADD LINK XX). Note that on a personal computer (1.4 GHz quad-core Intel i5 processor, 8GB RAM) each of the pipeline steps takes ~1-2 minutes to run.  
 
 ### Tutorial
 
@@ -71,6 +71,13 @@ cd ..
 mkdir ${INPUT##*/}_output 
 cd ${INPUT##*/}_output 
 ```
+
+We also want to save a pointer to the *trnL* reference files that we'll use downstream for taxonomic assignment.  
+
+```
+REF=$(pwd)/../../reference
+```
+
 Now, we'll begin working through the pipeline in QIIME2.  You'll need to activate your QIIME2 environment, which may differ in name from the example here.  You can check the name of the environment by running `conda env list`. Activate the environment by running: 
 ```
 conda activate qiime2-2022.8
@@ -91,6 +98,9 @@ qiime demux summarize \
 ```
 
 #### Trim adapter
+
+Next, we'll trim read-through into the Illumina sequencing adapter. This will happen to varying degrees depending on the length of the particular *trnL* amplicon and the number of sequencing cycles performed.  In our food plant reference, the shortest *trnL* sequences come from taxa including cocoyams (*Xanthosoma spp.*), melons (*Cucumis melo*), konjac (*Amorphophallus konjac*), and herbs like oregano, sage, and thyme (*Origanum vulgare*, *Salvia officinalis*, and *Thymus vulgaris*), which all have a *trnL*-P6 sequence between 59-61 bp in length. As a result, even very short sequencing reads of 75 bp  will extend through the full amplicon and off the end into the adapter.  
+
 ```
 qiime cutadapt trim-paired \
      --i-demultiplexed-sequences 1_demultiplexed.qza \
@@ -143,7 +153,24 @@ qiime dada2 denoise-paired \
      --o-denoising-stats 4_denoised-stats.qza \
      &> 4_denoised.txt
  ```
+ 
+#### Assign taxonomy
+
+```
+qiime feature-classifier classify-consensus-vsearch \
+     --i-query 4_denoised-seqs.qza \
+     --i-reference-reads $REF/trnL-sequences.qza \
+     --i-reference-taxonomy $REF/trnL-taxonomy.qza \
+     --p-maxaccepts 'all' \
+     --p-perc-identity 1 \
+     --p-query-cov 0.33 \
+     --p-strand 'plus' \
+     --p-min-consensus 0.51 \
+     --verbose \
+     --o-classification 5_taxonomic-class.qza \
+     --o-search-results 5_taxonomic-hits.qza \
+     &> 5_taxonomy.txt
+```
 
 #### Make feature table
 
-##### Assign taxonomy
