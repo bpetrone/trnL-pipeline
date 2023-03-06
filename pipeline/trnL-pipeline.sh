@@ -9,7 +9,7 @@
 #SBATCH --mail-type=END
 
 # Usage: 
-# sbatch trnL-pipeline.sh /path/to/demux-dir 
+# sbatch trnL-pipeline.sh /path/to/demux-dir reference-reads reference-taxonomy
 
 ## Set up input, output directories ############################################
 
@@ -82,6 +82,23 @@ qiime dada2 denoise-paired \
      --o-denoising-stats 4_denoised-stats.qza \
      &> 4_denoised.txt
      
+
+## Assign taxonomy #############################################################
+
+qiime feature-classifier classify-consensus-vsearch \
+     --i-query 4_denoised-seqs.qza \
+     --i-reference-reads $2 \
+     --i-reference-taxonomy $3 \
+     --p-maxaccepts 'all' \
+     --p-perc-identity 1 \
+     --p-query-cov 0.33 \ # Set based on ratio in shortest reference sequence
+     --p-strand 'plus' \
+     --p-min-consensus 0.51 \ 
+     --verbose \
+     --o-classification 5_taxonomic-class.qza \
+     &> 5_taxonomy.txt
+
+
 ## Make feature table ##########################################################
 
 qiime metadata tabulate \
