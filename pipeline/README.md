@@ -91,6 +91,9 @@ qiime demux summarize \
 ```
 
 #### Trim adapter
+
+Next, we'll trim read-through into the Illumina sequencing adapter. This will happen to varying degrees depending on the length of the particular *trnL* amplicon and the number of sequencing cycles performed.  In our food plant reference, the shortest *trnL* sequences come from taxa including cocoyams (*Xanthosoma spp.*), melons (*Cucumis melo*), konjac (*Amorphophallus konjac*), and herbs like oregano, sage, and thyme (*Origanum vulgare*, *Salvia officinalis*, and *Thymus vulgaris*), which all have a *trnL*-P6 sequence between 59-61 bp in length. As a result, even very short sequencing reads of 75 bp  will extend through the full amplicon and off the end into the adapter.  
+
 ```
 qiime cutadapt trim-paired \
      --i-demultiplexed-sequences 1_demultiplexed.qza \
