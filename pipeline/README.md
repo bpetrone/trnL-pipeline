@@ -48,7 +48,7 @@ Given a `FOLDER` containing the demultiplexed FASTQ input files, these scripts w
 QZA files are [QIIME2 artifacts](https://docs.qiime2.org/2022.8/concepts/#data-files-qiime-2-artifacts), or compressed files containing both the data generated at the corresponding stage of the pipeline and metadata about its type, format, and the commands that generated it.
 QZV files are [visualizations](https://docs.qiime2.org/2022.8/concepts/#data-files-visualizations) of the information contained in artifacts.  They're readily examined using the [QIIME2 View](https://view.qiime2.org) tool.
 
-An example dataset of 20 samples is provided in [example-data/]() that can be worked through the pipeline either on the command line as shown below, or interactively using the [R notebook tutorial](ADD LINK XX).
+An example dataset of 20 samples is provided in [example-data/](https://github.com/bpetrone/trnL-pipeline/tree/master/pipeline/example-data) that can be worked through the pipeline either on the command line as shown below, or interactively using the [R notebook tutorial](ADD LINK XX). Note that on a personal computer (1.4 GHz quad-core Intel i5 processor, 8GB RAM) each of the pipeline steps takes ~1-2 minutes to run.  
 
 ### Tutorial
 
