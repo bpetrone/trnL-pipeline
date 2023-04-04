@@ -152,24 +152,6 @@ qiime dada2 denoise-paired \
      --o-denoising-stats 4_denoised-stats.qza \
      &> 4_denoised.txt
  ```
- 
-#### Assign taxonomy
-
-```
-qiime feature-classifier classify-consensus-vsearch \
-     --i-query 4_denoised-seqs.qza \
-     --i-reference-reads $REF/trnL-sequences.qza \
-     --i-reference-taxonomy $REF/trnL-taxonomy.qza \
-     --p-maxaccepts 'all' \
-     --p-perc-identity 1 \
-     --p-query-cov 0.33 \
-     --p-strand 'plus' \
-     --p-min-consensus 0.51 \
-     --verbose \
-     --o-classification 5_taxonomic-class.qza \
-     --o-search-results 5_taxonomic-hits.qza \
-     &> 5_taxonomy.txt
-```
 
 #### Make feature table
 
