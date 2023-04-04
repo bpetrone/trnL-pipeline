@@ -2,7 +2,7 @@
 
 ## Materials
 - [ ] PCR A products from [Protocol 1: Primary 
-PCR](https://github.com/bpetrone/trnL-pipeline/blob/master/protocols/2_primary_pcr.md)
+PCR](https://github.com/bpetrone/trnL-pipeline/blob/master/protocol/1_primary_pcr.md)
 - [ ] Nuclease-free H<sub>2</sub>O
 
 ## Protocol
@@ -14,5 +14,5 @@ PCR](https://github.com/bpetrone/trnL-pipeline/blob/master/protocols/2_primary_p
 - [ ]  Add 45 ul of water to the 1:10 dilution to make a 1:100 dilution.  
 - [ ]  Mix by gently pipetting up and down 10X.
 - [ ]  Seal plate with foil, store in refrigerator for short-term use, or proceed directly to [Protocol 3: 
-Indexing PCR](https://github.com/bpetrone/mb-pipeline/blob/master/protocols/3_indexing_pcr.md).  Store 1:10 
+Indexing PCR](https://github.com/bpetrone/trnL-pipeline/blob/master/protocol/3_indexing_pcr.md).  Store 1:10 
 dilution plate in freezer as back-up. 
