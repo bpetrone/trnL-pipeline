@@ -1,11 +1,11 @@
-# Protocol 2A: Primary qPCR (trnL)
+# Protocol 1: Primary qPCR (trnL)
 
 ## Materials
 - [ ] KAPA HiFi Hot Start PCR kit (KAPA KK2502)
-- [ ] 10µM working stock of *trnL*-P6 forward primer with Illumina bridges (BP031)
-- [ ] 10µM working stock of *trnL*-P6 reverse primer with Illumina bridges (BP032)
+- [ ] 10µM working stock of *trnL*-P6 forward primer with Illumina bridges 
+- [ ] 10µM working stock of *trnL*-P6 reverse primer with Illumina bridges
 - [ ] SYBR Green I - diluted in DMSO to 100x
-- [ ] gDNA from [Protocol 1: DNA extraction](https://github.com/bpetrone/mb-pipeline/blob/master/protocols/1_dna_extraction.md) or other source in a 96 well plate
+- [ ] Extracted DNA from stool sample 
 - [ ] Positive control template DNA
 - [ ] Nuclease-free H<sub>2</sub>O
 
@@ -22,7 +22,8 @@
 - [ ] Run qPCR with cycling conditions from **Table 2**.
 - [ ] After qPCR run is done, transfer plates to -20˚C if processing is going to be paused.  Otherwise, keep plates at 4˚C.  
 - [ ] Inspect qPCR curves to confirm amplification and/or run 5 ul on an agarose gel or E-gel to confirm a single band of expected size.
-- [ ] Proceed to [Protocol 3: Dilution](https://github.com/bpetrone/mb-pipeline/edit/master/protocols/3_dilution.md)
+- [ ] Proceed to [Protocol 2: 
+Dilution](https://github.com/bpetrone/mb-pipeline/edit/master/protocols/2_dilution.md)
 
 **Table 1. Primary PCR Master Mix**
 | Component	| 1 Rxn (µL) | 100 Rxns (µL) |
