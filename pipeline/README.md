@@ -22,7 +22,6 @@ The overall steps of the pipeline are
 2.  Trim off non-biological nucleotides (*i.e.*, primers and adapters) from the reads
 3.  Denoise the reads to produce *trnL* amplicon sequence variants (ASVs)
 4.  Make a feature table
-5.  Assign taxonomy
 
 ### Outputs
 
