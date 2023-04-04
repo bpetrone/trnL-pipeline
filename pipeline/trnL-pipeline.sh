@@ -1,15 +1,17 @@
 #!/bin/bash
-#SBATCH --job-name=trnL-pipeline
-#SBATCH --mem=20000
-#SBATCH --partition scavenger 
-#SBATCH --out=/hpc/home/%u/trnL-pipeline-%j.out
-#SBATCH --error=/hpc/home/%u/trnL-pipeline-%j.err
-#SBATCH --mail-user=blp23@duke.edu
-#SBATCH --mail-type=FAIL
-#SBATCH --mail-type=END
 
 # Usage: 
-# sbatch trnL-pipeline.sh /path/to/demux-dir reference-reads reference-taxonomy
+# trnL-pipeline.sh /path/to/demux-dir 
+
+## Activate QIIME2 conda environment ###########################################
+
+## On a cluster, this might look like: 
+# source /path/to/miniconda3/etc/profile.d/conda.sh
+# conda activate qiime2-2022.8
+
+## On a personal machine, this can look like:
+# conda env list # List environments
+# conda activate qiime2-2022.8
 
 ## Set up input, output directories ############################################
 
@@ -17,9 +19,6 @@ INPUT=$1
 cd $INPUT/..
 mkdir ${1##*/}_output
 cd ${1##*/}_output
-
-source /hpc/home/blp23/miniconda3/etc/profile.d/conda.sh
-conda activate qiime2-2022.8
 
 ## Import ######################################################################
 
