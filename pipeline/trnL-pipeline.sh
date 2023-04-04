@@ -5,12 +5,15 @@
 
 ## Activate QIIME2 conda environment ###########################################
 
-## On a cluster, this might look like: 
+## Uncomment or edit the lines to customize to your computing environment
+## On a computing cluster, this can look like: 
+
 # source /path/to/miniconda3/etc/profile.d/conda.sh
 # conda activate qiime2-2022.8
 
-## On a personal machine, this can look like:
-# conda env list # List environments
+## On a personal machine, run `conda env list` to see your QIIME2 env name
+## Activating will look something like:
+
 # conda activate qiime2-2022.8
 
 ## Set up input, output directories ############################################
@@ -91,7 +94,3 @@ qiime metadata tabulate \
 qiime feature-table tabulate-seqs \
      --i-data 4_denoised-seqs.qza \
      --o-visualization 4_denoised-seqs.qzv
-
-qiime metadata tabulate \	
-     --m-input-file 4_denoised-stats.qza \
-     --o-visualization 4_denoised-stats.qzv
