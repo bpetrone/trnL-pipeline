@@ -4,10 +4,10 @@ This directory contains a description, code, and example dataset that describe t
 
 ### Requirements
 
--   [QIIME2](https://qiime2.org) (current distribution 2022.8). For
+-   [QIIME2](https://qiime2.org) (this code developed with version 2022.8). For
     installation instructions, see the [QIIME2
     documentation](https://docs.qiime2.org/2022.8/install/)
--   [DADA2](https://benjjneb.github.io/dada2/index.html).
+-   [DADA2](https://benjjneb.github.io/dada2/index.html) (this code developed with version 1.26.0)
 
 ### Inputs
 
@@ -69,12 +69,6 @@ INPUT=$(pwd)
 cd ..
 mkdir ${INPUT##*/}_output 
 cd ${INPUT##*/}_output 
-```
-
-We also want to save a pointer to the *trnL* reference files that we'll use downstream for taxonomic assignment.  
-
-```
-REF=$(pwd)/../../reference
 ```
 
 Now, we'll begin working through the pipeline in QIIME2.  You'll need to activate your QIIME2 environment, which may differ in name from the example here.  You can check the name of the environment by running `conda env list`. Activate the environment by running: 
@@ -155,3 +149,18 @@ qiime dada2 denoise-paired \
 
 #### Make feature table
 
+This formats the data as a sequence table (samples x ASVs), where each ASV is identified with a unique hash.
+```
+qiime metadata tabulate \
+     --m-input-file 4_denoised-table.qza \
+     --o-visualization 4_denoised-table.qzv
+```
+
+This creates a mapping from the unique hash above to the ASV's biological sequence.
+```
+qiime feature-table tabulate-seqs \
+     --i-data 4_denoised-seqs.qza \
+     --o-visualization 4_denoised-seqs.qzv
+```
+
+At this point, even large datasets are manageable enough in size to work with locally.  The sequence table can be read in and further processed using the `Pipeline to phyloseq` R Markdown notebook.  
