@@ -23,7 +23,7 @@
 - [ ] After qPCR run is done, transfer plates to -20˚C if processing is going to be paused.  Otherwise, keep plates at 4˚C.  
 - [ ] Inspect qPCR curves to confirm amplification and/or run 5 ul on an agarose gel or E-gel to confirm a single band of expected size.
 - [ ] Proceed to [Protocol 2: 
-Dilution](https://github.com/bpetrone/trnL-pipeline/edit/master/protocol/2_dilution.md)
+Dilution](https://github.com/bpetrone/trnL-pipeline/blob/master/protocol/2_dilution.md)
 
 **Table 1. Primary PCR Master Mix**
 | Component	| 1 Rxn (µL) | 100 Rxns (µL) |
