@@ -1,10 +1,10 @@
-# Protocol 4: Indexing PCR
+# Protocol 3: Indexing PCR
 
 ## Materials
 - [ ] KAPA HiFi Hot Start PCR kit (KAPA KK2502)
 - [ ] Pre-mixed Illumina-compatible barcoding primers, 2.5 uM each primer, 5 uM total (Ordered from IDT, diluted and mixed in-house)
 - [ ] SYBR Green I - diluted in DMSO to 100x
-- [ ] Primary PCR-amplified template diluted 1:100 from [Protocol 2: Dilution](https://github.com/bpetrone/mb-pipeline/blob/master/protocols/2_dilution.md), including any positive and negative controls
+- [ ] Primary PCR-amplified template diluted 1:100 from [Protocol 2: Dilution](https://github.com/bpetrone/trnL-pipeline/blob/master/protocol/2_dilution.md), including any positive and negative controls
 - [ ] Nuclease-free H<sub>2</sub>O
 
 ## Protocol
