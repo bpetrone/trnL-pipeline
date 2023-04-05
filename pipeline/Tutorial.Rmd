@@ -1,0 +1,189 @@
+---
+title: "trnL Pipeline Tutorial"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+To-dos: - compare results - Incorporate references to QIIME2 view for these types of objects?? - Use this documentation to guide <https://github.com/allenlab/QIIME2_16S_ASV_protocol> <https://rachaellappan.github.io/VL-QIIME2-analysis/pre-processing-of-sequence-reads.html> - <https://github.com/jbisanz/qiime2R> - user glossary <https://docs.qiime2.org/2022.8/glossary/> - <https://forum.qiime2.org/t/using-rescripts-extract-seq-segments-to-extract-reference-sequences-without-pcr-primer-pairs/23618>
+
+This notebook produces, from demultiplexed Illumina paired-end sequencing data, a directory with the following structure:
+
+The overall workflow follows (guides)[ref] for other variable-length metabarcoding marker genes like ITS, the internal transcribed spacer region used as a barcode for plants/fungi.
+
+The notebook alternates between code chunks run in R (which begin with `{r}`) and one that run QIIME2 on the command line (beginning with `bash`). 
+
+## Setup
+
+```{r setup, include=FALSE}
+require(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+# Note that below isn't currently working when running chunks interactively,
+# but should when the document is knit
+# https://github.com/rstudio/rstudio/issues/8149
+# knitr::opts_chunk$set(engine.opts = list(bash = "-l"))
+```
+
+```{r}
+# Load required R libraries
+library(here)
+library(qiime2R)
+library(tidyverse)
+```
+First, we'll set up a directory to store the output of the analysis pipeline on the example dataset. We'll locate this in the repository as shown below:
+
+- trnL-pipeline
+     |
+     - pipeline
+          |
+          - example-dataset
+          - example_dataset_output
+
+```{r}
+# Get paths
+input <- file.path(getwd(),
+                   'example-data')
+
+# output <- file.path(getwd(), 
+#                     'example-data_output')
+
+# Create directory
+# dir.create(output)
+```
+
+```{r}
+# Set variables for bash chunks below
+Sys.setenv(INPUT = input)
+Sys.setenv(OUTPUT = output)
+```
+
+## Read in data
+
+Here we examine a small test dataset of 20 samples from the Weight Loss, Adult-1, and Adult-2 cohorts that have already been demultiplexed. First, let's check the contents of the input directory.  We should have 20 pairs of compressed FASTQ files (a forward and reverse read, or R1 and R2, for each). 
+
+```{bash engine.opts='-l'}
+cd "$INPUT"
+ls
+```
+
+First, we'll import the demultiplexed sequencing files as a QIIME2 artifact.
+
+```{bash engine.opts='-l'}
+# Import FASTQ files into QIIME2
+conda activate qiime2-2022.8 
+
+qiime tools import \
+     --type 'SampleData[PairedEndSequencesWithQuality]' \
+     --input-path "$INPUT_DIR" \
+     --input-format CasavaOneEightSingleLanePerSampleDirFmt \
+     --output-path "$OUTPUT_DIR"/1_demultiplexed.qza
+```
+
+```{bash engine.opts='-l'}
+conda activate qiime2-2022.8
+
+qiime demux summarize \
+  --i-data "$OUTPUT_DIR"/1_demultiplexed.qza \
+  --o-visualization "$OUTPUT_DIR"/1_demultiplexed.qzv
+```
+
+## Trim adapters
+
+Next, we'll trim read-through into the Illumina sequencing adapter. This will happen to varying degrees depending on the length of the particular *trnL* amplicon and the number of sequencing cycles performed.  In our food plant reference, the shortest *trnL* sequences come from taxa including cocoyams (*Xanthosoma spp.*), melons (*Cucumis melo*), konjac (*Amorphophallus konjac*), and herbs like oregano, sage, and thyme (*Origanum vulgare*, *Salvia officinalis*, and *Thymus vulgaris*), which all have a *trnL*-P6 sequence between 59-61 bp in length. As a result, even very short sequencing reads of 75 bp  will extend through the full amplicon and off the end into the adapter.  
+
+```{bash engine.opts='-l'}
+conda activate qiime2-2022.8 
+cd "$OUTPUT_DIR"
+
+qiime cutadapt trim-paired \
+     --i-demultiplexed-sequences 1_demultiplexed.qza \
+     --p-adapter-f CTGTCTCTTATACACATCT \
+     --p-adapter-r CTGTCTCTTATACACATCT \
+     --verbose \
+     --o-trimmed-sequences 2_adapter-trimmed.qza \
+     &> 2_adapter-trimmed.txt
+
+qiime demux summarize \
+  --i-data 2_adapter-trimmed.qza \
+  --o-visualization 2_adapter-trimmed.qzv
+```
+
+## Trim primers 
+
+We trim primers using cutadapt to accommodate the overall short (XX-XX) but variable length of trnL, which can result in sequencing through the amplicon into the reverse primer and Illumina adapter sequences. 
+
+```{bash engine.opts='-l'}
+conda activate qiime2-2022.8 
+cd "$OUTPUT_DIR"
+
+qiime cutadapt trim-paired \
+     --i-demultiplexed-sequences 2_adapter-trimmed.qza \
+     --p-adapter-f ^GGGCAATCCTGAGCCAA...GATAGGTGCAGAGACTCAATGG \
+     --p-adapter-r ^CCATTGAGTCTCTGCACCTATC...TTGGCTCAGGATTGCCC \
+     --p-error-rate 0.15 \
+     --p-minimum-length 1 \
+     --p-overlap 5 \
+     --p-discard-untrimmed \
+     --verbose \
+     --o-trimmed-sequences 3_primer-trimmed.qza \
+     &> 3_primer-trimmed.txt
+
+qiime demux summarize \
+  --i-data 3_primer-trimmed.qza \
+  --o-visualization 3_primer-trimmed.qzv \
+```
+
+## Denoise reads
+
+```{bash engine.opts='-l'}
+# Denoise, de-replicate, and filter chimeras
+conda activate qiime2-2022.8 
+cd "$OUTPUT_DIR"
+
+qiime dada2 denoise-paired \
+     --i-demultiplexed-seqs 3_primer-trimmed.qza \
+     --p-trunc-len-f 0 \
+     --p-trunc-len-r 0 \
+     --p-max-ee-f 2 \
+     --p-max-ee-r 2 \
+     --p-trunc-q 2 \
+     --p-min-overlap 12 \
+     --p-pooling-method 'independent' \
+     --verbose \
+     --o-table 4_denoised-table.qza \
+     --o-representative-sequences 4_denoised-seqs.qza \
+     --o-denoising-stats 4_denoised-stats.qza \
+     &> 4_denoised.txt
+```
+
+```{bash engine.opts='-l'}
+# Visualize the output
+conda activate qiime2-2022.8 
+cd "$OUTPUT_DIR"
+
+qiime feature-table summarize \
+  --i-table 4_denoised-table.qza \
+  --o-visualization 4_denoised-table.qzv
+```
+
+```{bash engine.opts='-l'}
+conda activate qiime2-2022.8 
+cd "$OUTPUT_DIR"
+
+qiime tools export --input-path 4_denoised-table.qza \
+     --output-path 4_exported-feature-table
+     
+biom convert -i 4_exported-feature-table/feature-table.biom \
+     -o 4_feature-table.tsv --to-tsv
+```
+
+
+```{r}
+taxonomy <-
+     here('pipeline',
+          'example-data_output',
+          '5_taxonomic-class.qza') %>% 
+     read_qza()
+
+taxonomy$data
+```
+
