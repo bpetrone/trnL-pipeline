@@ -175,15 +175,3 @@ qiime tools export --input-path 4_denoised-table.qza \
 biom convert -i 4_exported-feature-table/feature-table.biom \
      -o 4_feature-table.tsv --to-tsv
 ```
-
-
-```{r}
-taxonomy <-
-     here('pipeline',
-          'example-data_output',
-          '5_taxonomic-class.qza') %>% 
-     read_qza()
-
-taxonomy$data
-```
-
