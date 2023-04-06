@@ -1,0 +1,255 @@
+---
+title: "trnL Pipeline Tutorial"
+output: 
+     html_document:
+          toc: true
+          toc_float: true
+---
+
+This notebook produces, from the data in `example data`, a new directory named `example data_output` that contains the following files grouped by their stage in the pipeline:
+
+- 1: Raw data
+     - 1_demultiplexed.qza
+     - 1_demultiplexed.qzv
+- 2: Adapter trimmed data
+     - 2_adapter-trimmed.qza
+     - 2_adapter-trimmed.qzv
+     - 2_adapter-trimmed.txt
+- 3: trnL primer trimmed data
+     - 3_primer-trimmed.qza
+     - 3_primer-trimmed.qzv
+     - 3_primer-trimmed.txt
+- 4: Denoised and tabulated data
+     - 4_denoised-seqs.qza
+     - 4_denoised-stats.qza
+     - 4_denoised.txt
+     - 4_feature-table.tsv
+
+QZA files are [QIIME2 artifacts](https://docs.qiime2.org/2022.8/concepts/#data-files-qiime-2-artifacts), or compressed files containing both the data generated at the corresponding stage of the pipeline and metadata about its type, format, and the commands that generated it.
+QZV files are [visualizations](https://docs.qiime2.org/2022.8/concepts/#data-files-visualizations) of the information contained in artifacts.  They're readily examined using the [QIIME2 View](https://view.qiime2.org) tool.
+
+The notebook alternates between code chunks run in R (which begin with `{r}`) and one that run QIIME2 on the command line (beginning with `bash`). 
+
+## Setup
+
+```{r setup, include=FALSE}
+require(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+# Note that below isn't currently working when running chunks interactively,
+# but should when the document is knit
+# https://github.com/rstudio/rstudio/issues/8149
+# knitr::opts_chunk$set(engine.opts = list(bash = "-l"))
+```
+
+```{r}
+# Load required R libraries
+library(qiime2R)
+library(tidyverse)
+```
+First, we'll set up a directory to store the output of the analysis pipeline on the example dataset. We'll locate this in the repository as shown below:
+
+- trnL-pipeline
+     |
+     - pipeline
+          |
+          - example-dataset
+          - example_dataset_output
+
+```{r}
+# Get paths
+input <- file.path(getwd(),
+                   'example-data')
+
+output <- file.path(getwd(),
+                    'example-data_output')
+
+# Create directory
+dir.create(output)
+```
+
+```{r}
+# Set variables for bash chunks below
+Sys.setenv(INPUT = input)
+Sys.setenv(OUTPUT = output)
+```
+
+## Read in data
+
+Here we examine a small test dataset of 20 samples from the Weight Loss, Adult-1, and Adult-2 cohorts that have already been demultiplexed. First, let's check the contents of the input directory.  We should have 20 pairs of compressed FASTQ files (a forward and reverse read, or R1 and R2, for each). 
+
+```{bash engine.opts='-l'}
+cd "$INPUT"
+ls
+```
+
+First, we'll import the demultiplexed sequencing files as a QIIME2 artifact.
+
+```{bash engine.opts='-l'}
+# Import FASTQ files into QIIME2
+conda activate qiime2-2022.8 
+
+qiime tools import \
+     --type 'SampleData[PairedEndSequencesWithQuality]' \
+     --input-path "$INPUT" \
+     --input-format CasavaOneEightSingleLanePerSampleDirFmt \
+     --output-path "$OUTPUT"/1_demultiplexed.qza
+```
+
+```{bash engine.opts='-l'}
+conda activate qiime2-2022.8
+
+qiime demux summarize \
+  --i-data "$OUTPUT"/1_demultiplexed.qza \
+  --o-visualization "$OUTPUT"/1_demultiplexed.qzv
+```
+
+## Trim adapters
+
+Next, we'll trim read-through into the Illumina sequencing adapter. This will happen to varying degrees depending on the length of the particular *trnL* amplicon and the number of sequencing cycles performed.  In our food plant reference, the shortest *trnL* sequences come from taxa including cocoyams (*Xanthosoma spp.*), melons (*Cucumis melo*), konjac (*Amorphophallus konjac*), and herbs like oregano, sage, and thyme (*Origanum vulgare*, *Salvia officinalis*, and *Thymus vulgaris*), which all have a *trnL*-P6 sequence between 59-61 bp in length. As a result, even very short sequencing reads of 75 bp  will extend through the full amplicon and off the end into the adapter.  
+
+```{bash engine.opts='-l'}
+conda activate qiime2-2022.8 
+cd "$OUTPUT"
+
+qiime cutadapt trim-paired \
+     --i-demultiplexed-sequences 1_demultiplexed.qza \
+     --p-adapter-f CTGTCTCTTATACACATCT \
+     --p-adapter-r CTGTCTCTTATACACATCT \
+     --verbose \
+     --o-trimmed-sequences 2_adapter-trimmed.qza \
+     &> 2_adapter-trimmed.txt
+
+qiime demux summarize \
+  --i-data 2_adapter-trimmed.qza \
+  --o-visualization 2_adapter-trimmed.qzv
+```
+
+## Trim primers 
+
+We trim primers using cutadapt to accommodate the overall short (XX-XX) but variable length of trnL, which can result in sequencing through the amplicon into the reverse primer and Illumina adapter sequences. 
+
+```{bash engine.opts='-l'}
+conda activate qiime2-2022.8 
+cd "$OUTPUT"
+
+qiime cutadapt trim-paired \
+     --i-demultiplexed-sequences 2_adapter-trimmed.qza \
+     --p-adapter-f ^GGGCAATCCTGAGCCAA...GATAGGTGCAGAGACTCAATGG \
+     --p-adapter-r ^CCATTGAGTCTCTGCACCTATC...TTGGCTCAGGATTGCCC \
+     --p-error-rate 0.15 \
+     --p-minimum-length 1 \
+     --p-overlap 5 \
+     --p-discard-untrimmed \
+     --verbose \
+     --o-trimmed-sequences 3_primer-trimmed.qza \
+     &> 3_primer-trimmed.txt
+
+qiime demux summarize \
+  --i-data 3_primer-trimmed.qza \
+  --o-visualization 3_primer-trimmed.qzv \
+```
+
+## Denoise reads
+
+```{bash engine.opts='-l'}
+# Denoise, de-replicate, and filter chimeras
+conda activate qiime2-2022.8 
+cd "$OUTPUT"
+
+qiime dada2 denoise-paired \
+     --i-demultiplexed-seqs 3_primer-trimmed.qza \
+     --p-trunc-len-f 0 \
+     --p-trunc-len-r 0 \
+     --p-max-ee-f 2 \
+     --p-max-ee-r 2 \
+     --p-trunc-q 2 \
+     --p-min-overlap 12 \
+     --p-pooling-method 'independent' \
+     --verbose \
+     --o-table 4_denoised-table.qza \
+     --o-representative-sequences 4_denoised-seqs.qza \
+     --o-denoising-stats 4_denoised-stats.qza \
+     &> 4_denoised.txt
+```
+
+```{bash engine.opts='-l'}
+# Visualize the output
+conda activate qiime2-2022.8 
+cd "$OUTPUT"
+
+qiime metadata tabulate \
+     --m-input-file 4_denoised-table.qza \
+     --o-visualization 4_denoised-table.qzv
+
+# This maps hash to seqs
+qiime feature-table tabulate-seqs \
+     --i-data 4_denoised-seqs.qza \
+     --o-visualization 4_denoised-seqs.qzv
+```
+
+## Parse pipeline output
+
+We'll now process the QIIME2 output into a final output of a human-readable ASV table that can be used in downstream analysis. 
+
+First, we'll use QIIME2R functions to extract information from QIIME2 artifacts. Starting with the ASV table (ASVs hashes in rows, samples (named here by their well) in columns):
+
+```{r}
+qiime.asvtab <- 
+     file.path(output,
+          '4_denoised-table.qza') %>% 
+     read_qza()
+
+qiime.asvtab$data[1:10, 1:10]
+```
+Now, we'll pull the information that maps the hash to the ASV sequence:
+```{r}
+qiime.seqs <- 
+     file.path(output,
+          '4_denoised-seqs.qza') %>% 
+     read_qza()
+
+qiime.seqs$data
+```
+Finally, we'll combine these two:
+
+```{r}
+join_table_seqs <- function(feature_table, sequence_hash){
+     # Taking the above feature table and sequence hashes as input, make an
+     # ASV table of sequences x samples
+     
+     # Make dataframe mapping from from hash to ASV
+     sequence_hash <- 
+          data.frame(asv = sequence_hash$data) %>% 
+          rownames_to_column(var = 'hash')
+     
+     # Substitute hash for ASV in feature table
+     feature_table <-
+          feature_table$data %>% 
+          data.frame() %>% 
+          rownames_to_column(var = 'hash') %>% 
+          left_join(sequence_hash) %>% 
+          column_to_rownames(var = 'asv') %>% 
+          select(-hash) 
+     
+     # Transform rows and columns and repair plate-well names\
+     feature_table <- t(feature_table) 
+     
+     # Repair names
+     row.names(feature_table) <- gsub(pattern = 'X',
+                                      replacement = '',
+                                      row.names(feature_table))
+     row.names(feature_table) <- gsub(pattern = '\\.',
+                                      replacement = '-',
+                                      row.names(feature_table))
+          
+     feature_table
+}
+```
+
+Now, we have an ASV table where samples are rows and sequences are in columns that can be used in downstream analysis.
+
+```{r}
+qiime.asvtab <- join_table_seqs(qiime.asvtab, qiime.seqs)
+qiime.asvtab[1:10, 1:10]
+```
+
