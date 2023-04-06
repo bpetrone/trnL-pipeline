@@ -1,6 +1,6 @@
 ## Computational pipeline
 
-This directory contains a description, code, and example dataset that describe the procedure for analyzing *trnL*-P6 amplicon sequencing libraries generated using the primers *trnL*(UAA)*g* and *trnL*(UAA)*h*) from [Taberlet *et al.*, 2006](https://dx.doi.org/10.1093/nar/gkl938). These scripts produce, from demultiplexed paired-end sequencing data, a table of *trnL* sequence variants, their counts in each sample, and their taxonomic assignment.  Additional details are described below. 
+This directory contains a description, code, and example dataset that describe the procedure for analyzing *trnL*-P6 amplicon sequencing libraries generated using the primers *trnL*(UAA)*g* and *trnL*(UAA)*h*) from [Taberlet *et al.*, 2006](https://dx.doi.org/10.1093/nar/gkl938). These scripts produce, from demultiplexed paired-end sequencing data, a table of *trnL* sequence variants and their counts in each sample.  Additional details are described below. 
 
 ### Requirements
 
@@ -47,7 +47,7 @@ Given a `FOLDER` containing the demultiplexed FASTQ input files, these scripts w
 QZA files are [QIIME2 artifacts](https://docs.qiime2.org/2022.8/concepts/#data-files-qiime-2-artifacts), or compressed files containing both the data generated at the corresponding stage of the pipeline and metadata about its type, format, and the commands that generated it.
 QZV files are [visualizations](https://docs.qiime2.org/2022.8/concepts/#data-files-visualizations) of the information contained in artifacts.  They're readily examined using the [QIIME2 View](https://view.qiime2.org) tool.
 
-An example dataset of 20 samples is provided in [example-data/](https://github.com/bpetrone/trnL-pipeline/tree/master/pipeline/example-data) that can be worked through the pipeline either on the command line as shown below, interactively using the [R notebook tutorial](ADD LINK XX), or with a single bash script [`trnL-pipeline.sh`](https://github.com/bpetrone/trnL-pipeline/blob/master/pipeline/trnL-pipeline.sh). Note that working interactively on a personal computer (1.4 GHz quad-core Intel i5 processor, 8GB RAM) each of the pipeline steps takes ~1-2 minutes to run.  
+An example dataset of 20 samples is provided in [example-data/](https://github.com/bpetrone/trnL-pipeline/tree/master/pipeline/example-data) that can be worked through the pipeline either on the command line as shown below, interactively using the [R notebook tutorial](https://github.com/bpetrone/trnL-pipeline/blob/master/pipeline/Tutorial.Rmd), or with a single bash script [`trnL-pipeline.sh`](https://github.com/bpetrone/trnL-pipeline/blob/master/pipeline/trnL-pipeline.sh). Note that working interactively on a personal computer (1.4 GHz quad-core Intel i5 processor, 8GB RAM) each of the pipeline steps takes ~1-2 minutes to run.  
 
 ### Tutorial
 
