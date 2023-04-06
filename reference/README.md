@@ -1,4 +1,4 @@
-This directory contains the reference database of *trnL* sequences used for taxonomic assignment of *trnL* sequencing reads, `trnLGH.fasta` as a FASTA file.
+This directory contains the reference database of *trnL* sequences used for taxonomic assignment of *trnL* sequencing reads as a FASTA file, `trnLGH.fasta`.
 
 The current version of the reference contains **791 *trnL* sequences** across **468 food plant species**. 
 
