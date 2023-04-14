@@ -1,7 +1,9 @@
 ---
 title: "trnL Pipeline Tutorial"
-output: html_document
-date: "`r Sys.Date()`"
+output: 
+     html_document:
+          toc: true
+          toc_float: true
 ---
 
 This notebook produces, from the data in `example data`, a new directory named `example data_output` that contains the following files grouped by their stage in the pipeline:
@@ -88,17 +90,17 @@ conda activate qiime2-2022.8
 
 qiime tools import \
      --type 'SampleData[PairedEndSequencesWithQuality]' \
-     --input-path "$INPUT_DIR" \
+     --input-path "$INPUT" \
      --input-format CasavaOneEightSingleLanePerSampleDirFmt \
-     --output-path "$OUTPUT_DIR"/1_demultiplexed.qza
+     --output-path "$OUTPUT"/1_demultiplexed.qza
 ```
 
 ```{bash engine.opts='-l'}
 conda activate qiime2-2022.8
 
 qiime demux summarize \
-  --i-data "$OUTPUT_DIR"/1_demultiplexed.qza \
-  --o-visualization "$OUTPUT_DIR"/1_demultiplexed.qzv
+  --i-data "$OUTPUT"/1_demultiplexed.qza \
+  --o-visualization "$OUTPUT"/1_demultiplexed.qzv
 ```
 
 ## Trim adapters
@@ -107,7 +109,7 @@ Next, we'll trim read-through into the Illumina sequencing adapter. This will ha
 
 ```{bash engine.opts='-l'}
 conda activate qiime2-2022.8 
-cd "$OUTPUT_DIR"
+cd "$OUTPUT"
 
 qiime cutadapt trim-paired \
      --i-demultiplexed-sequences 1_demultiplexed.qza \
@@ -128,7 +130,7 @@ We trim primers using cutadapt to accommodate the overall short (XX-XX) but vari
 
 ```{bash engine.opts='-l'}
 conda activate qiime2-2022.8 
-cd "$OUTPUT_DIR"
+cd "$OUTPUT"
 
 qiime cutadapt trim-paired \
      --i-demultiplexed-sequences 2_adapter-trimmed.qza \
@@ -152,7 +154,7 @@ qiime demux summarize \
 ```{bash engine.opts='-l'}
 # Denoise, de-replicate, and filter chimeras
 conda activate qiime2-2022.8 
-cd "$OUTPUT_DIR"
+cd "$OUTPUT"
 
 qiime dada2 denoise-paired \
      --i-demultiplexed-seqs 3_primer-trimmed.qza \
@@ -173,7 +175,7 @@ qiime dada2 denoise-paired \
 ```{bash engine.opts='-l'}
 # Visualize the output
 conda activate qiime2-2022.8 
-cd "$OUTPUT_DIR"
+cd "$OUTPUT"
 
 qiime metadata tabulate \
      --m-input-file 4_denoised-table.qza \
