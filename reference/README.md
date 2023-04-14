@@ -1,6 +1,4 @@
-This directory contains the reference database of *trnL* sequences used for taxonomic assignment of sequencing reads and the code used to produce it. These include
-- `human-foods.csv`: A list of food taxa submitted as queries to NCBI to produce the reference database
-- `trnLGH.fasta`: The generated reference sequence database as a FASTA file
+This directory contains the reference database of *trnL* sequences used for taxonomic assignment of *trnL* sequencing reads as a FASTA file, `trnLGH.fasta`.
 
 The current version of the reference contains **791 *trnL* sequences** across **468 food plant species**. 
 
